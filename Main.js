@@ -8,7 +8,7 @@ var url = 'mongodb://localhost:27017/notesDB';
 app.listen(8081);
 
 app.get('/', function(req, res){
-    res.send('hello world');
+    res.send('Hello to Note API runninng on http://146.185.150.81:8081/');
 });
 
 app.get('/addNote' ,function(req, res){
@@ -72,11 +72,15 @@ app.get('/deleteNote',function(req, res){
 	     deleteObject,
 	      function(err, results) {
 	         callback();
+
+			res.set('Content-Type', 'application/json');
 	         if(!err){
 	         	console.log(err);
 	         	console.log(deleteObject);
-				res.set('Content-Type', 'application/json');
-    			res.json("OK");
+    			res.json({"status_code" : "400"});
+	         }
+	         else {
+    			res.json({"status_code" : "101"});
 	         }
 	      }
 	    );
@@ -87,6 +91,33 @@ app.get('/deleteNote',function(req, res){
 	  	removeNote(db, function() {
 	     db.close();
 	  	});
+	});
+});
+
+app.get('/updateNote', function	(req,res){
+	var id = req.query.id;
+
+	var updateNote = function(db, callback) {
+	   db.collection('notes').updateOne(
+	      { "_id" : ObjectId(id) } ,
+	      { $set: { "name": req.query.name , "body": req.query.body } }, 
+	      	function(err, results) {
+	      		res.set('Content-Type', 'application/json');
+	         	if(!err){
+	         		console.log(err);
+    				res.json({"status_code" : "400"});
+	         	} else {
+    				res.json({"status_code" : "101"});
+	        	}
+	      		callback();
+	   		});
+	};
+
+	mongoClient.connect(url, function(err, db) {
+		assert.equal(null, err);
+		updateNote(db, function() {
+			db.close();
+		});
 	});
 });
 
