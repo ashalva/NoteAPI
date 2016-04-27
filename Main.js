@@ -3,7 +3,7 @@ var app = express();
 var mongoClient = require('mongodb').MongoClient;
 var assert = require('assert');
 var ObjectId = require('mongodb').ObjectID;
-var url = 'mongodb://localhost:27017/test';
+var url = 'mongodb://localhost:27017/notesDB';
 
 app.listen(8081);
 
@@ -48,6 +48,7 @@ app.get('/getNotes' ,function(req, res){
 	      	 jsonString =  jsonString.substring(0, jsonString.length - 1);
 	      	 jsonString += ']';
 	         callback(jsonString);
+	         console.log ("Callback: " +jsonString)
 	      }
 	   })
 	};
@@ -57,7 +58,7 @@ app.get('/getNotes' ,function(req, res){
   		findRestaurants(db, function(jsonString) {
       		db.close();
       		res.set('Content-Type', 'application/json');
-    		res.json(jsonString);
+    		res.send(jsonString);
   		});
 	});
 });
@@ -88,8 +89,6 @@ app.get('/deleteNote',function(req, res){
 	  	});
 	});
 });
-
-
 
 console.log('Server running at http://146.185.150.81:8081/');
 
