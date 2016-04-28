@@ -132,21 +132,25 @@ app.get('/updateNote', function(req, res){
 
 app.get('/register', function(req, res){
 
+	console.log('register method \n');
 	res.set('Content-Type', 'application/json');
 	var userName = req.query.username;
 	var password = req.query.password;
-
+	var alreadyInserted = false;
 	var findUser = function(db, callback) {
 	   	var cursor = db.collection('users').find( { "username" : userName });
 	   	cursor.each(function(err, doc) {
 	   		assert.equal(err, null);
 		      if (doc == null) {
-		         callback(false);
+		      	if (!alreadyInserted)
+		         	callback();
 		      } else {
-		         callback(true);
+		      	console.log();	
+		      	alreadyInserted = true;
+		        res.json({"status_code" : "101"});
 		      }
 	 	});
-   };
+    };
 
    var insertUser = function(db, callback) {
    		db.collection('users').insertOne( {
@@ -163,20 +167,16 @@ app.get('/register', function(req, res){
    	mongoClient.connect(url, function(err, db) {
 	  	assert.equal(null, err);
 	  	findUser(db, function(exists) {
-			console.log(exists);
-		  	if(exists){
-	    		res.json({"status_code" : "101"});
-		  	} else{
-		  	   	insertUser	(db, function(result) {
-					if(!err){
-			    		res.json({"status_code" : "200"});
-				    }
-				    else {
-			    		res.json({"status_code" : "101"});
-				    }      		
-					db.close();
+			console.log();
+		  	insertUser	(db, function(result) {
+				if(!err){
+			    	res.json({"status_code" : "200"});
+				}
+				else {
+			    	res.json({"status_code" : "101"});
+				}  
+		  		db.close();
 	  			});
-		  	}
   		});
 	});
 });
@@ -210,6 +210,7 @@ app.get('/getUsers', function(req, res){
   		});
 	});
 });
+
 app.get('/deleteUser', function(req, res){
 	
 	var name = req.query.name;
@@ -240,6 +241,7 @@ app.get('/deleteUser', function(req, res){
 	  	});
 	});
 });
+
 console.log('Server running at http://146.185.150.81:8081/');
 
 
