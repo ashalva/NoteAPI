@@ -11,13 +11,13 @@ app.get('/', function(req, res){
     res.send('Hello to Note API runninng on http://146.185.150.81:8081/');
 });
 
-app.get('/addNote' ,function(req, res){
+app.get('/addNote', function(req, res){
 	var newNote =  {
         'name' : req.query.name,
         'body' : req.query.body
    	};
 
-   	var insertDocument = function(db, callback) {
+   	var insertNote = function(db, callback) {
    		db.collection('notes').insertOne( newNote, 
    			function(err, result) {
 		    	assert.equal(err, null);
@@ -28,14 +28,22 @@ app.get('/addNote' ,function(req, res){
 	
 	mongoClient.connect(url, function(err, db) {
   		assert.equal(null, err);
-  		insertDocument(db, function() {
-      		db.close();
+  		insertNote(db, function() {
+		    res.set('Content-Type', 'application/json');
+		     if(!err){
+	         	console.log(err);
+    			res.json({"status_code" : "200"});
+	         }
+	         else {
+    			res.json({"status_code" : "101"});
+	         }      		
+	         db.close();
   		});
 	});
-    getRequest(newNote,res);
 });
 
-app.get('/getNotes' ,function(req, res){
+app.get('/getNotes', function(req, res){
+
 	var findRestaurants = function(db, callback) {
 	   var cursor = db.collection('notes').find();
 	   var jsonString= '[';
@@ -46,7 +54,8 @@ app.get('/getNotes' ,function(req, res){
 	         jsonString += (JSON.stringify(doc) + ',');
 	      } else {
 	      	 jsonString =  jsonString.substring(0, jsonString.length - 1);
-	      	 jsonString += ']';
+	      	 if(jsonString.length > 0)
+	      	 	jsonString += ']';
 	         callback(jsonString);
 	         console.log ("Callback: " +jsonString)
 	      }
@@ -63,7 +72,7 @@ app.get('/getNotes' ,function(req, res){
 	});
 });
 
-app.get('/deleteNote',function(req, res){
+app.get('/deleteNote', function(req, res){
 	
 	var id = req.query.id;
 	var removeNote = function(db, callback) {
@@ -77,7 +86,7 @@ app.get('/deleteNote',function(req, res){
 	         if(!err){
 	         	console.log(err);
 	         	console.log(deleteObject);
-    			res.json({"status_code" : "400"});
+    			res.json({"status_code" : "200"});
 	         }
 	         else {
     			res.json({"status_code" : "101"});
@@ -94,7 +103,7 @@ app.get('/deleteNote',function(req, res){
 	});
 });
 
-app.get('/updateNote', function	(req,res){
+app.get('/updateNote', function(req, res){
 	var id = req.query.id;
 
 	var updateNote = function(db, callback) {
@@ -105,7 +114,7 @@ app.get('/updateNote', function	(req,res){
 	      		res.set('Content-Type', 'application/json');
 	         	if(!err){
 	         		console.log(err);
-    				res.json({"status_code" : "400"});
+    				res.json({"status_code" : "200"});
 	         	} else {
     				res.json({"status_code" : "101"});
 	        	}
@@ -121,9 +130,116 @@ app.get('/updateNote', function	(req,res){
 	});
 });
 
+app.get('/register', function(req, res){
+
+	res.set('Content-Type', 'application/json');
+	var userName = req.query.username;
+	var password = req.query.password;
+
+	var findUser = function(db, callback) {
+	   	var cursor = db.collection('users').find( { "username" : userName });
+	   	cursor.each(function(err, doc) {
+	   		assert.equal(err, null);
+		      if (doc == null) {
+		         callback(false);
+		      } else {
+		         callback(true);
+		      }
+	 	});
+   };
+
+   var insertUser = function(db, callback) {
+   		db.collection('users').insertOne( {
+   			"username" : userName,
+   			"password" : password
+   		}, 
+   		function(err, result) {
+		    assert.equal(err, null);
+		    console.log("Inserted a user into the users collection.");
+		    callback(result);
+	  	});
+	};
+
+   	mongoClient.connect(url, function(err, db) {
+	  	assert.equal(null, err);
+	  	findUser(db, function(exists) {
+			console.log(exists);
+		  	if(exists){
+	    		res.json({"status_code" : "101"});
+		  	} else{
+		  	   	insertUser	(db, function(result) {
+					if(!err){
+			    		res.json({"status_code" : "200"});
+				    }
+				    else {
+			    		res.json({"status_code" : "101"});
+				    }      		
+					db.close();
+	  			});
+		  	}
+  		});
+	});
+});
+
+app.get('/getUsers', function(req, res){
+
+	var findRestaurants = function(db, callback) {
+	   var cursor = db.collection('users').find();
+	   var jsonString= '[';
+	   cursor.each(function(err, doc) {
+	      assert.equal(err, null);
+	      if (doc != null) {
+	         console.log(doc);
+	         jsonString += (JSON.stringify(doc) + ',');
+	      } else {
+	      	 jsonString =  jsonString.substring(0, jsonString.length - 1);
+	      	 if(jsonString.length > 0)
+	      	 	jsonString += ']';
+	         callback(jsonString);
+	         console.log ("Callback: " +jsonString)
+	      }
+	   })
+	};
+	
+	mongoClient.connect(url, function(err, db) {
+  		assert.equal(null, err);
+  		findRestaurants(db, function(jsonString) {
+      		db.close();
+      		res.set('Content-Type', 'application/json');
+    		res.send(jsonString);
+  		});
+	});
+});
+app.get('/deleteUser', function(req, res){
+	
+	var name = req.query.name;
+	var removeUser = function(db, callback) {
+		var deleteObject=  { "username": name};
+	   	db.collection('users').deleteOne(
+	     deleteObject,
+	      function(err, results) {
+	         callback();
+
+			res.set('Content-Type', 'application/json');
+	         if(!err){
+	         	console.log(err);
+	         	console.log(deleteObject);
+    			res.json({"status_code" : "200"});
+	         }
+	         else {
+    			res.json({"status_code" : "101"});
+	         }
+	      }
+	    );
+	};
+
+	mongoClient.connect(url, function(err, db) {
+	  	assert.equal(null, err);
+	  	removeUser(db, function() {
+	     db.close();
+	  	});
+	});
+});
 console.log('Server running at http://146.185.150.81:8081/');
 
-function getRequest (note,resp) {
-    resp.set('Content-Type', 'application/json');
-    resp.json(note);
-}
+
