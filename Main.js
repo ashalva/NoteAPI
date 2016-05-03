@@ -131,7 +131,6 @@ app.get('/updateNote', function(req, res){
 });
 
 app.get('/register', function(req, res){
-
 	console.log('register method \n');
 	res.set('Content-Type', 'application/json');
 	var userName = req.query.username;
@@ -170,7 +169,7 @@ app.get('/register', function(req, res){
 			console.log();
 		  	insertUser	(db, function(result) {
 				if(!err){
-			    	res.json({"status_code" : "200"});
+			    	res.json({"status_code" : "200", '_id' : result.ops[0]._id});
 				}
 				else {
 			    	res.json({"status_code" : "101"});
