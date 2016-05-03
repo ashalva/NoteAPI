@@ -131,11 +131,11 @@ app.get('/updateNote', function(req, res){
 });
 
 app.get('/register', function(req, res){
-	console.log('register method \n');
-	res.set('Content-Type', 'application/json');
+
 	var userName = req.query.username;
 	var password = req.query.password;
 	var alreadyInserted = false;
+
 	var findUser = function(db, callback) {
 	   	var cursor = db.collection('users').find( { "username" : userName });
 	   	cursor.each(function(err, doc) {
@@ -182,7 +182,7 @@ app.get('/register', function(req, res){
 
 app.get('/getUsers', function(req, res){
 
-	var findRestaurants = function(db, callback) {
+	var findUsers = function(db, callback) {
 	   var cursor = db.collection('users').find();
 	   var jsonString= '[';
 	   cursor.each(function(err, doc) {
@@ -202,7 +202,7 @@ app.get('/getUsers', function(req, res){
 	
 	mongoClient.connect(url, function(err, db) {
   		assert.equal(null, err);
-  		findRestaurants(db, function(jsonString) {
+  		findUsers(db, function(jsonString) {
       		db.close();
       		res.set('Content-Type', 'application/json');
     		res.send(jsonString);
@@ -241,6 +241,41 @@ app.get('/deleteUser', function(req, res){
 	});
 });
 
+app.get('/login', function(req, res){
+
+	var userName = req.query.username;
+	var password = req.query.password;
+	var alreadyFound = false;
+
+	var findUser = function(db, callback) {
+	   	var cursor = db.collection('users').find( { "username" : userName });
+	   	cursor.each(function(err, doc) {
+	   		assert.equal(err, null);
+		      if (doc == null) {
+		        if(!alreadyFound)
+		        	res.json({"status_code" : "101"});
+		      } else {
+		      	if (!alreadyFound){
+		      		callback();
+		      		alreadyFound = true;
+		      	}
+		      }
+	 	});
+    };
+
+    mongoClient.connect(url, function(err, db) {
+	  	assert.equal(null, err);
+	  	findUser(db, function(exists) {
+			if(!err){
+			    res.json({"status_code" : "200"});
+			}
+			else {
+			    res.json({"status_code" : "101"});
+			}  
+		  	db.close();
+  		});
+	});
+});
 console.log('Server running at http://146.185.150.81:8081/');
 
 
