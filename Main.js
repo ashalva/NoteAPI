@@ -12,9 +12,11 @@ app.get('/', function(req, res){
 });
 
 app.get('/addNote', function(req, res){
+	
 	var newNote =  {
         'name' : req.query.name,
-        'body' : req.query.body
+        'body' : req.query.body,
+        "userId" : req.query.userId
    	};
 
    	var insertNote = function(db, callback) {
@@ -44,8 +46,10 @@ app.get('/addNote', function(req, res){
 
 app.get('/getNotes', function(req, res){
 
+	var userId = req.query.userId;
+
 	var findRestaurants = function(db, callback) {
-	   var cursor = db.collection('notes').find();
+	   var cursor = db.collection('notes').find({ "userId" : userId});
 	   var jsonString= '[';
 	   cursor.each(function(err, doc) {
 	      assert.equal(err, null);
@@ -76,7 +80,7 @@ app.get('/deleteNote', function(req, res){
 	
 	var id = req.query.id;
 	var removeNote = function(db, callback) {
-		var deleteObject=  { "_id": ObjectId(id)};
+		var deleteObject=  { "_id" : ObjectId(id)};
 	   	db.collection('notes').deleteOne(
 	     deleteObject,
 	      function(err, results) {
@@ -248,7 +252,7 @@ app.get('/login', function(req, res){
 	var alreadyFound = false;
 
 	var findUser = function(db, callback) {
-	   	var cursor = db.collection('users').find( { "username" : userName });
+	   	var cursor = db.collection('users').find( { "username" : userName , 'password' : password});
 	   	cursor.each(function(err, doc) {
 	   		assert.equal(err, null);
 		      if (doc == null) {
@@ -256,7 +260,7 @@ app.get('/login', function(req, res){
 		        	res.json({"status_code" : "101"});
 		      } else {
 		      	if (!alreadyFound){
-		      		callback();
+		      		callback(doc);
 		      		alreadyFound = true;
 		      	}
 		      }
@@ -265,9 +269,9 @@ app.get('/login', function(req, res){
 
     mongoClient.connect(url, function(err, db) {
 	  	assert.equal(null, err);
-	  	findUser(db, function(exists) {
+	  	findUser(db, function(result) {
 			if(!err){
-			    res.json({"status_code" : "200"});
+			    res.json({"status_code" : "200", '_id': result._id});
 			}
 			else {
 			    res.json({"status_code" : "101"});
@@ -276,6 +280,7 @@ app.get('/login', function(req, res){
   		});
 	});
 });
+
 console.log('Server running at http://146.185.150.81:8081/');
 
 
